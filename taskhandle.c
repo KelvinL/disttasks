@@ -108,7 +108,7 @@ void completion_fn_aget(int rc, const struct String_vector *strings, const void*
 		}
 		else
 		{
-			sleep(1);
+			//sleep(1);
 			printf("completion_fn_aget node %s delete successfully\n", children);
 			ret = zoo_aget_children(g_zhdl, g_tasksRoot, false, completion_fn_aget, "root child node");
 		}
@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
 	const char* host = "127.0.0.1:2181";
 	int timeout = 30000;
 	int c = '0';
-	
+
 	ret = init_zkhandle(host, timeout, watcher_fn_g, "TaskHandle");
 	create_taskRootNode();
 	agetChildren();

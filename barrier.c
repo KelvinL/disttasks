@@ -84,6 +84,42 @@ int create_root(const char* node_name, const char* data)
 	return ret;
 }
 
+void watcher_fn_create_taskroot(int rc, const char* name, const void* data)
+{
+	fprintf(stderr, "[%s]: rc = %d\n", (char*)(data==0?"null":data), rc);
+	if (!rc) {
+		fprintf(stderr, "\tname = %s\n", name);
+	}
+}
+
+int create_taskRootNode()
+{
+	int ret = 0;
+	const char* tasksRoot = "/TasksRoot";
+	struct Stat stat;
+
+	ret = zoo_exists(g_zhdl, tasksRoot, true, &stat);
+	if(ret == ZOK)
+	{
+		printf("create_taskRootNode %s already create\n", tasksRoot);
+	}
+	else if(ret == ZNONODE)
+	{
+		ret = zoo_acreate(g_zhdl, tasksRoot, "0", strlen("0"),
+				&ZOO_OPEN_ACL_UNSAFE, 0, watcher_fn_create_taskroot, "TasksRoot data");
+		if(ret)
+		{
+			printf("create_taskRootNode%s error", tasksRoot);
+		}
+	}
+	else
+	{
+		printf("create_root error\n");
+	}
+
+	return ret;
+}
+
 char childnode_fullname[256] = {0};
 void watcher_fn_create_child(int rc, const char* name, const void* data)
 {
@@ -187,7 +223,7 @@ int main(int argc, char *argv[])
 	ret = init_zkhandle(host, timeout, watcher_fn_g, "Barrier");
 	ret = create_root(g_root, "test");
 
-	enter();
+	//enter();
 
 	while(1)
 	{
@@ -196,10 +232,18 @@ int main(int argc, char *argv[])
 		{
 			break;
 		}
+		else if(c == 'e')
+		{
+			enter();
+		}
 		else if(c == 'l')
 		{
 			leave();
 			break;
+		}
+		else if(c == 't')
+		{
+			create_taskRootNode();
 		}
 	}
 
