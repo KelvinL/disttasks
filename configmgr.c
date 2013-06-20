@@ -80,12 +80,21 @@ int fini_zkhandle()
 
 void watcher_fn_znode(zhandle_t *zh, int type, int state, const char* path, void* watcherCtx)
 {
-			printf("watcher_fn_znode ZOO_CHANGED_EVENT \n");
+	int ret = 0;
+	struct Stat MyStat;
+	int bufLen = 4*1024;
+	printf("watcher_fn_znode ZOO_CHANGED_EVENT \n");
 	if(state == ZOO_CONNECTED_STATE)
 	{
 		if(type == ZOO_CHANGED_EVENT)
 		{
 			printf("watcher_fn_znode ZOO_CHANGED_EVENT \n");
+			ret = zoo_wget(g_zhdl, path, watcher_fn_znode, NULL, g_pBuffer, &bufLen, &MyStat);
+			if(ret)
+			{
+				printf("watcher_fn_znode wget error: %d\n", ret);
+			}
+			printf("watcher_fn_znode data: %s, len: %d\n", g_pBuffer, bufLen);
 		}
 		else if(type == ZOO_DELETED_EVENT)
 		{
@@ -106,7 +115,7 @@ int create_ephemeral_node(const char* pNodePath, const char* pData, int nDataLen
 {
 	int ret = 0;
 	struct Stat MyStat;
-	int bufLen = 0;
+	int bufLen = 4*1024;
 	
 	ret = zoo_create(g_zhdl, pNodePath, pData, nDataLen, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL, 0);
 	if(ret)
@@ -119,6 +128,7 @@ int create_ephemeral_node(const char* pNodePath, const char* pData, int nDataLen
 	{
 		printf("wget error: %d\n", ret);
 	}
+	printf("create_ephemeral_node data: %s\n", g_pBuffer);
 
 	return ret;
 }

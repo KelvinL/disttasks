@@ -132,16 +132,49 @@ void watcher_fn_create_child(int rc, const char* name, const void* data)
 }
 
 int g_enterFlag = 0;
-
+void completion_fn_enter(int rc, const struct String_vector *strings, const void* data);
+void watcher_fn_znode(zhandle_t *zh, int type, int state, const char* path, void* watcherCtx)
+{
+	int ret = 0;
+	printf("watcher_fn_znode ZOO_CHANGED_EVENT \n");
+	if(state == ZOO_CONNECTED_STATE)
+	{
+		if(type == ZOO_CHANGED_EVENT)
+		{
+			printf("watcher_fn_znode ZOO_CHANGED_EVENT \n");
+		}
+		else if(type == ZOO_DELETED_EVENT)
+		{
+			printf("watcher_fn_znode ZOO_DELETED_EVENT\n");
+		}
+		else if(type == ZOO_CHILD_EVENT)
+		{
+			printf("watcher_fn_znode ZOO_CHILD_EVENT\n");
+			ret = zoo_aget_children(g_zhdl, g_root, false, completion_fn_enter, 
+				"root child node");
+		}
+		else if(type == ZOO_CREATED_EVENT)
+		{
+			printf("watcher_fn_znode ZOO_CREATED_EVENT\n");
+		}
+	}
+}
 void completion_fn_enter(int rc, const struct String_vector *strings, const void* data)
 {
 	int ret = 0;
 	int i = 0;
+	struct String_vector *strNew;
 	printf("completion_fn_enter count: %d\n", strings->count);
-	if(strings->count < 2)
+	if(strings->count < 3)
 	{
-		ret = zoo_aget_children(g_zhdl, g_root, false, completion_fn_enter, 
-			"root child node");
+		//ret = zoo_aget_children(g_zhdl, g_root, false, completion_fn_enter, 
+		//	"root child node");
+		printf("completion_fn_enter set watcher\n");
+		ret = zoo_wget_children(g_zhdl, g_root, watcher_fn_znode, NULL, strNew);
+		if(ret != ZOK)
+		{
+			printf("completion_fn_enter set watcher error\n");
+		}
 	}
 	else
 	{
@@ -157,6 +190,7 @@ int enter()
 {
 	int ret = 0;
 	char childNode[128] = {0};
+	struct String_vector *strings;
 	sprintf(childNode, "%s/hello", g_root);
 
 	ret = zoo_acreate(g_zhdl, childNode, "child", strlen("child"), 
@@ -169,6 +203,12 @@ int enter()
 	}
 	g_enterFlag = 1;
 	ret = zoo_aget_children(g_zhdl, g_root, false, completion_fn_enter, "root child node");
+	//ret = zoo_wget_children(g_zhdl, g_root, watcher_fn_znode, NULL, strings);
+	if(ret != ZOK)
+	{
+		return -1;
+	}
+
 	while(g_enterFlag == 1)
 	{
 		usleep(10);
@@ -179,14 +219,47 @@ int enter()
 }
 
 int g_leaveFlag = 0;
+void completion_fn_leave(int rc, const struct String_vector *strings, const void* data);
+void watcher_fn_znode_leave(zhandle_t *zh, int type, int state, const char* path, void* watcherCtx)
+{
+	int ret = 0;
+	printf("watcher_fn_znode_leave ZOO_CHANGED_EVENT \n");
+	if(state == ZOO_CONNECTED_STATE)
+	{
+		if(type == ZOO_CHANGED_EVENT)
+		{
+			printf("watcher_fn_znode_leave ZOO_CHANGED_EVENT \n");
+		}
+		else if(type == ZOO_DELETED_EVENT)
+		{
+			printf("watcher_fn_znode_leave ZOO_DELETED_EVENT\n");
+		}
+		else if(type == ZOO_CHILD_EVENT)
+		{
+			printf("watcher_fn_znode_leave ZOO_CHILD_EVENT\n");
+			ret = zoo_aget_children(g_zhdl, g_root, false, completion_fn_leave, 
+				"root child node");
+		}
+		else if(type == ZOO_CREATED_EVENT)
+		{
+			printf("watcher_fn_znode_leave ZOO_CREATED_EVENT\n");
+		}
+	}
+}
 void completion_fn_leave(int rc, const struct String_vector *strings, const void* data)
 {
 	int ret = 0;
-	printf("completion_fn_enter count: %d\n", strings->count);
+	struct String_vector *strNew;
+	printf("completion_fn_leave count: %d\n", strings->count);
 	if(strings->count > 0)
 	{
-		ret = zoo_aget_children(g_zhdl, g_root, false, completion_fn_leave, 
-			"root child node");
+		//ret = zoo_aget_children(g_zhdl, g_root, false, completion_fn_leave, 
+		//	"root child node");
+		ret = zoo_wget_children(g_zhdl, g_root, watcher_fn_znode_leave, NULL, strNew);
+		if(ret != ZOK)
+		{
+			printf("completion_fn_leave set watcher error\n");
+		}
 	}
 	else
 	{
